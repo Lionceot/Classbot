@@ -17,9 +17,11 @@ from discord.errors import ExtensionNotLoaded, ExtensionNotFound, ExtensionAlrea
 # identifiants des comptes discords étant reconnu comme propriétaires du bot, ici mes deux comptes discord
 owners = [444504367152889877, 357202046581080067, 5]
 
-
-def is_owner(ctx):
-    return ctx.author.id in ctx.bot.owner_ids
+# identifiant des serveurs discord où seront créés les commandes d'application
+guild_ids = [
+    # 733722460771581982,
+    747064216447352854
+]
 
 
 def get_parameter(param: str):
@@ -75,19 +77,13 @@ class MyBot(commands.Bot):
 
 bot = MyBot()
 
-# identifiant des serveurs discord où seront créés les commandes d'application
-guild_ids = [
-    # 733722460771581982,
-    747064216447352854
-]
-
 # Creating a slash command group for all admin commands
 admin_group = SlashCommandGroup("admin", "Commandes réservées à l'administrateur du bot")
 
 
-@admin_group.command(name="clear", description="Administrateur seulement")
+@admin_group.command(name="clear", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="amount", description="The amount of message you want to delete")
-@commands.check(is_owner)
+@permissions.is_owner()
 async def admin_clear(ctx: ApplicationContext, amount: int):
     await ctx.channel.purge(limit=amount)
     log_msg = f"[CMD] {ctx.author} has deleted {amount} messages in {ctx.channel.id}"
@@ -100,9 +96,9 @@ async def cog_autocomplete(ctx: AutocompleteContext):
     return cogs if cogs else ["error"]
 
 
-@admin_group.command(name="reload", description="Administrateur seulement")
+@admin_group.command(name="reload", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@commands.check(is_owner)
+@permissions.is_owner()
 async def admin_reload(ctx: ApplicationContext, cog: str):
     try:
         bot.reload_extension(f"cogs.{cog}")
@@ -123,9 +119,9 @@ async def admin_reload(ctx: ApplicationContext, cog: str):
             await ctx.respond("> Unknown cog", ephemeral=True)
 
 
-@admin_group.command(name="load", description="Administrateur seulement")
+@admin_group.command(name="load", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@commands.check(is_owner)
+@permissions.is_owner()
 async def admin_load(ctx: ApplicationContext, cog: str):
     try:
         bot.load_extension(f"cogs.{cog}")
@@ -141,9 +137,9 @@ async def admin_load(ctx: ApplicationContext, cog: str):
         await ctx.respond("Unknown cog", ephemeral=True)
 
 
-@admin_group.command(name="unload", description="Administrateur seulement")
+@admin_group.command(name="unload", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@commands.check(is_owner)
+@permissions.is_owner()
 async def admin_unload(ctx: ApplicationContext, cog: str):
     try:
         bot.reload_extension(f"cogs.{cog}")
@@ -161,22 +157,25 @@ async def directory_autocomplete(ctx: AutocompleteContext):
     for item in listdir('./'):
         if isdir(item):
             directories.append(item)
+
+    # directories.remove('logs')
     return directories if directories else ["error"]
 
 
 async def filename_autocomplete(ctx: AutocompleteContext):
     directory = ctx.options['directory']
+    search = ctx.options['filename']
     files = []
     for item in listdir(f"{directory}/"):
-        if not isdir(item):
+        if not isdir(item) and search in item:
             files.append(item)
-    return files if files else ["error"]
+    return files if files else ["Nothing found"]
 
 
-@admin_group.command(name="download", description="Administrateur seulement")
+@admin_group.command(name="download", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="directory", description="The directory of the file.", autocomplete=directory_autocomplete)
 @option(name="filename", description="The targeted file", autocomplete=filename_autocomplete)
-@commands.check(is_owner)
+@permissions.is_owner()
 async def download_file(ctx: ApplicationContext, directory: str, filename: str):
     try:
         log_msg = f"[DOWNLOAD] '{directory}/{filename}' has been downloaded by {ctx.author}"
@@ -187,8 +186,8 @@ async def download_file(ctx: ApplicationContext, directory: str, filename: str):
         await ctx.respond(e, ephemeral=True)
 
 
-@admin_group.command(name="shutdown", description="Administrateur seulement")
-@commands.check(is_owner)
+@admin_group.command(name="shutdown", description="Administrateur seulement", guild_ids=guild_ids)
+@permissions.is_owner()
 async def admin_shutdown(ctx: ApplicationContext):
     await ctx.respond("Closing bot !", ephemeral=True)
     log_msg = f"[STATUS] Bot stopped by {ctx.author}"

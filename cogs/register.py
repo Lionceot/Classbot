@@ -1,12 +1,12 @@
 from discord import Embed, Member, utils, AutocompleteContext
 from discord.ext import commands
-from discord.commands import option
+from discord.commands import option, permissions
 from discord.ext.commands.errors import RoleNotFound
 
 import json
 
 import main
-from main import time_now, log_action, get_parameter, is_owner
+from main import time_now, log_action, get_parameter
 
 # identifiants des comptes autorisés à utiliser les commandes administratives
 admin_ids = [444504367152889877, 357202046581080067, 474220078766751774]
@@ -55,6 +55,7 @@ class Register(commands.Cog):
         log_action(file_name=self.client.log_file_name, txt=log_msg)
 
     @commands.command(name="op", description="Met un rôle avec les permissions administrateurs à un utilisateur", brief="Give a role with administrator permission to a user")
+    @permissions.is_owner()
     async def set_administrator(self, ctx, user: Member = None):
         if not user:
             await ctx.reply("Please specify a user")
@@ -89,9 +90,9 @@ class Register(commands.Cog):
     #
     @commands.slash_command(name="register", description="Attribue les rôles et renomme l'élève selon la liste.", brief="Rename et give roles to the student according to the list", guild_ids=[747064216447352854])
     @option(name="lastname", description="Votre nom de famille", autocomplete=lastname_autocomplete)
-    @option(name="firstname", description="Votre prénom")
+    @option(name="firstname", description="Votre prénom", autocomplete=firstname_autocomplete)
     @option(name="user", description="Administrateur seulement", type=Member, required=False)
-    @commands.check(is_owner)
+    @permissions.is_owner()
     async def register(self, ctx, lastname: str, firstname: str, user: Member = None):
         if not user or (user and not user_is_allowed(ctx)):
             user = ctx.author
@@ -122,9 +123,9 @@ class Register(commands.Cog):
             await member.edit(nick=nick)
             await ctx.respond("Vos rôles vous ont été attribués !", ephemeral=True)
 
-            ds_start = "\🔗 ❱❱"
-            file_start = "[REGISTER] 🔗"
-            log_msg = f" {user.mention} ▬ `{nick} - {' '.join(groups)}` ({user.id})"
+            ds_start = f"\🔗 ❱❱ {user.mention}"
+            file_start = f"[REGISTER] 🔗 {user}"
+            log_msg = f" ▬ `{nick} - {' '.join(groups)}` ({user.id})"
 
             log_action(file_name=self.client.log_file_name, txt=file_start + log_msg)
             log_channel = self.client.get_channel(get_parameter('log_channel'))
@@ -155,9 +156,9 @@ class Register(commands.Cog):
                         linked_accounts[user.id] = student_id
                         json.dump(linked_accounts, link_file, indent=2)
 
-                    ds_start = "\🆕 ❱❱"
-                    file_start = "[REGISTER] 🆕"
-                    log_msg = f" {user.mention} ▬ `{nick} - {' '.join(groups)}` ({user.id})"
+                    ds_start = f"\🆕 ❱❱ {user.mention}"
+                    file_start = f"[REGISTER] 🆕 {user}"
+                    log_msg = f" ▬ `{nick} - {' '.join(groups)}` ({user.id})"
 
                     log_action(file_name=self.client.log_file_name, txt=file_start + log_msg)
                     log_channel = self.client.get_channel(get_parameter('log_channel'))
