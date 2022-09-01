@@ -26,7 +26,7 @@ async def lastname_autocomplete(ctx: AutocompleteContext):
 
     for student_id in students:
         lastname = students[student_id]['lastname']
-        if lastname not in lastnames:
+        if lastname not in lastnames and ctx.options['lastname'] in lastname:
             lastnames.append(lastname)
     return lastnames
 
@@ -38,7 +38,7 @@ async def firstname_autocomplete(ctx: AutocompleteContext):
         students = json.load(student_file)
 
     for student_id in students:
-        if students[student_id]['lastname'] == lastname:
+        if students[student_id]['lastname'] == lastname and ctx.options['firstname'] in students[student_id]['firstname']:
             firstnames.append(students[student_id]['firstname'])
 
     return firstnames
@@ -88,11 +88,11 @@ class Register(commands.Cog):
         await ctx.send(embed=emb)
 
     #
-    @commands.slash_command(name="register", description="Attribue les rôles et renomme l'élève selon la liste.", brief="Rename et give roles to the student according to the list", guild_ids=[747064216447352854])
+    @commands.slash_command(name="register", description="Attribue les rôles et renomme l'élève selon la liste.",
+                            usage="[lastname: str] [firstname: str] (user: Member)", guild_ids=[747064216447352854])
     @option(name="lastname", description="Votre nom de famille", autocomplete=lastname_autocomplete)
     @option(name="firstname", description="Votre prénom", autocomplete=firstname_autocomplete)
     @option(name="user", description="Administrateur seulement", type=Member, required=False)
-    @permissions.is_owner()
     async def register(self, ctx, lastname: str, firstname: str, user: Member = None):
         if not user or (user and not user_is_allowed(ctx)):
             user = ctx.author

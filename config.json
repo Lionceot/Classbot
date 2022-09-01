@@ -22,5 +22,11 @@
 			"THLP": null,
 			"OP": 889976176104325152
 		}
-	}
+	},
+	"ignored_directories": [
+		".git",
+		".idea",
+		"venv",
+		"__pycache__"
+	]
 }

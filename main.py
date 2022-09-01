@@ -88,12 +88,13 @@ async def admin_clear(ctx: ApplicationContext, amount: int):
     await ctx.channel.purge(limit=amount)
     log_msg = f"[CMD] {ctx.author} has deleted {amount} messages in {ctx.channel.id}"
     log_action(file_name=bot.log_file_name, txt=log_msg)
-    await ctx.respond(f"{amount} messages have been deleted !")
+    await ctx.respond(f"> {amount} messages have been deleted !", ephemeral=True)
 
 
 async def cog_autocomplete(ctx: AutocompleteContext):
-    cogs = [filename[:-3] for filename in listdir('./cogs') if filename.endswith('.py')]
-    return cogs if cogs else ["error"]
+    search = ctx.options['cog']
+    cogs = [filename[:-3] for filename in listdir('./cogs') if filename.endswith('.py') and search in filename]
+    return cogs if cogs else ["Nothing found"]
 
 
 @admin_group.command(name="reload", description="Administrateur seulement", guild_ids=guild_ids)
@@ -105,7 +106,7 @@ async def admin_reload(ctx: ApplicationContext, cog: str):
         log_msg = f"[COG] '{cog}' cog reloaded by {ctx.author}"
         print(f"\033[0;33m[{time_now().strftime('%d-%m-%Y][%H:%M:%S')}]{log_msg}\033[0m")
         log_action(bot.log_file_name, log_msg)
-        await ctx.respond(f"> `{cog}` reloaded", ephemeral=True)
+        await ctx.respond(f"> Cog `{cog}` reloaded", ephemeral=True)
 
     except ExtensionNotLoaded:
         try:
@@ -113,7 +114,7 @@ async def admin_reload(ctx: ApplicationContext, cog: str):
             log_msg = f"[COG] '{cog}' cog loaded by {ctx.author}"
             print(f"\033[0;33m[{time_now().strftime('%d-%m-%Y][%H:%M:%S')}]{log_msg}\033[0m")
             log_action(bot.log_file_name, log_msg)
-            await ctx.respond(f"> `{cog}` loaded", ephemeral=True)
+            await ctx.respond(f"> Cog `{cog}` loaded", ephemeral=True)
 
         except ExtensionNotFound:
             await ctx.respond("> Unknown cog", ephemeral=True)
@@ -128,7 +129,7 @@ async def admin_load(ctx: ApplicationContext, cog: str):
         log_msg = f"[COG] '{cog}' cog loaded by {ctx.author}"
         print(f"\033[0;33m[{time_now().strftime('%d-%m-%Y][%H:%M:%S')}]{log_msg}\033[0m")
         log_action(file_name=bot.log_file_name, txt=log_msg)
-        await ctx.respond(f"> `{cog}` loaded", ephemeral=True)
+        await ctx.respond(f"> Cog `{cog}` loaded", ephemeral=True)
 
     except ExtensionAlreadyLoaded:
         await ctx.respond("Cog already loaded", ephemeral=True)
@@ -146,7 +147,7 @@ async def admin_unload(ctx: ApplicationContext, cog: str):
         log_msg = f"[COG] '{cog}' cog unloaded by {ctx.author}"
         print(f"\033[0;33m[{time_now().strftime('%d-%m-%Y][%H:%M:%S')}]{log_msg}\033[0m")
         log_action(bot.log_file_name, log_msg)
-        await ctx.respond(f"> `{cog}` reloaded", ephemeral=True)
+        await ctx.respond(f"> Cog `{cog}` reloaded", ephemeral=True)
 
     except ExtensionNotLoaded:
         await ctx.respond("> Unknown cog or cog not loaded", ephemeral=True)
@@ -154,12 +155,14 @@ async def admin_unload(ctx: ApplicationContext, cog: str):
 
 async def directory_autocomplete(ctx: AutocompleteContext):
     directories = ['.']
+    search = ctx.options['directory']
+    ignored_directories = get_parameter('ignored_directories')
     for item in listdir('./'):
-        if isdir(item):
+        if isdir(item) and item not in ignored_directories and search in item:
             directories.append(item)
 
     # directories.remove('logs')
-    return directories if directories else ["error"]
+    return directories if directories else ["Nothing found"]
 
 
 async def filename_autocomplete(ctx: AutocompleteContext):
@@ -177,13 +180,17 @@ async def filename_autocomplete(ctx: AutocompleteContext):
 @option(name="filename", description="The targeted file", autocomplete=filename_autocomplete)
 @permissions.is_owner()
 async def download_file(ctx: ApplicationContext, directory: str, filename: str):
-    try:
-        log_msg = f"[DOWNLOAD] '{directory}/{filename}' has been downloaded by {ctx.author}"
-        log_action(file_name=bot.log_file_name, txt=log_msg)
-        await ctx.respond(file=File(fp=f"{directory}/{filename}", filename=filename), ephemeral=True)
+    if directory in get_parameter('ignored_directories'):
+        await ctx.respond("> Access denied !", ephemeral=True)
 
-    except Exception as e:
-        await ctx.respond(e, ephemeral=True)
+    else:
+        try:
+            log_msg = f"[DOWNLOAD] '{directory}/{filename}' has been downloaded by {ctx.author}"
+            log_action(file_name=bot.log_file_name, txt=log_msg)
+            await ctx.respond(file=File(fp=f"{directory}/{filename}", filename=filename), ephemeral=True)
+
+        except Exception as e:
+            await ctx.respond(e, ephemeral=True)
 
 
 @admin_group.command(name="shutdown", description="Administrateur seulement", guild_ids=guild_ids)
