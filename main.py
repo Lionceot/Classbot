@@ -134,6 +134,9 @@ async def admin_load(ctx: ApplicationContext, cog: str):
         log_action(file_name=bot.log_file_name, txt=log_msg)
         await ctx.respond(f"> `{cog}` loaded", ephemeral=True)
 
+    except ExtensionAlreadyLoaded:
+        await ctx.respond("Cog already loaded", ephemeral=True)
+
     except ExtensionNotFound:
         await ctx.respond("Unknown cog", ephemeral=True)
 
