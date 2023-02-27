@@ -4,7 +4,7 @@
 
 - Version : `2.1`
 
-Made by Jibril Chettaoui, it is made to allow teachers to easily manage a simple discord server with multiple classes.
+Made by me, it is made to allow teachers to easily manage a simple discord server with multiple classes.
 It does require for you to have a list of all the students you're waiting for in the server in an Excel file. 
 
 
