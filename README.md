@@ -1,23 +1,33 @@
 # Classbot
 
 ---
-- version : `2.0.0`
 
-Créé par Jibril Chettaoui, ce programme a pour but d'automatiser l'attribution de rôle sur un serveur discord privé 
-à destination des élèves d'un.e professeur.e. Simple d'utilisation, il permet un gain de temps considérable et évite 
-l'attribution manuelle des roles
+- Version : `2.1`
 
-## Commandes :
+Made by Jibril Chettaoui, it is made to allow teachers to easily manage a simple discord server with multiple classes.
+It does require for you to have a list of all the students you're waiting for in the server in an Excel file. 
+
+
+## Setup :
 
 ---
-- `op [user]` : attribue un role administrateur sur le discord
-- `addS [lastname] [firstname] [groups]` : ajoute un élève à la liste
-- `addG [group] [studentID]` : ajoute une classe à un élève
-- `removeS [lastname] [firstname]` : retire un élève de la liste
-- `tuto` : affiche le message d'explication
-- `/register` : permet à un élève d'obtenir les rôles qui lui sont réservés
 
-- `load` : charge une extension du code
-- `reload` : recharge une extension du code
-- `unload` : décharge une extension du code
-- `shutdown` : éteint le bot
+One day I'll put something here (maybe)
+
+
+## Commands :
+
+---
+
+`[ ]` = required argument \
+`( )` = optional argument
+
+- `/op [user]` : attribue un role administrateur sur le discord
+- `/register [lastname] [firstname] (user)` : permet à un élève d'obtenir les rôles qui lui sont réservés
+
+- `/admin download [directory] [filename]`: permet de télécharger un fichier présent dans le projet
+- `/admin clear [amount]`: supprime 'amount' message dans le salon où cette commande est effectuée
+- `/admin load` : charge une extension du code
+- `/admin reload` : recharge une extension du code
+- `/admin unload` : décharge une extension du code
+- `/admin shutdown` : éteint le bot
