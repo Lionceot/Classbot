@@ -5,19 +5,14 @@ from os import getenv, listdir
 from os.path import isdir
 from dotenv import load_dotenv
 
-from discord import (
-    Embed, Status, Game, Intents, Activity, ActivityType, SlashCommandGroup,
-    ApplicationContext, AutocompleteContext, File
-)
+from discord import Status, Intents, SlashCommandGroup, ApplicationContext, AutocompleteContext, File, Member, utils
 from discord.ext import commands
-from discord.commands import option, permissions
+from discord.commands import option
+from discord.ext.commands import RoleNotFound
 from discord.errors import ExtensionNotLoaded, ExtensionNotFound, ExtensionAlreadyLoaded
 
 
-# identifiants des comptes discords étant reconnu comme propriétaires du bot, ici mes deux comptes discord
-owners = [444504367152889877, 357202046581080067, 5]
-
-# identifiant des serveurs discord où seront créés les commandes d'application
+# identifiant des serveurs discord où seront créées les commandes d'application
 guild_ids = [
     # 733722460771581982,
     747064216447352854
@@ -50,6 +45,7 @@ class MyBot(commands.Bot):
         with open("config.json", "r") as f:
             config = json.load(f)
             prefix = config["prefix"]
+            owners = config['owner_ids']
 
         intents = Intents.all()
         super().__init__(
@@ -83,7 +79,7 @@ admin_group = SlashCommandGroup("admin", "Commandes réservées à l'administrat
 
 @admin_group.command(name="clear", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="amount", description="The amount of message you want to delete")
-@permissions.is_owner()
+@commands.has_permissions(manage_messages=True)
 async def admin_clear(ctx: ApplicationContext, amount: int):
     await ctx.channel.purge(limit=amount)
     log_msg = f"[CMD] {ctx.author} has deleted {amount} messages in {ctx.channel.id}"
@@ -99,8 +95,10 @@ async def cog_autocomplete(ctx: AutocompleteContext):
 
 @admin_group.command(name="reload", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@permissions.is_owner()
 async def admin_reload(ctx: ApplicationContext, cog: str):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
     try:
         bot.reload_extension(f"cogs.{cog}")
         log_msg = f"[COG] '{cog}' cog reloaded by {ctx.author}"
@@ -122,8 +120,10 @@ async def admin_reload(ctx: ApplicationContext, cog: str):
 
 @admin_group.command(name="load", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@permissions.is_owner()
 async def admin_load(ctx: ApplicationContext, cog: str):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
     try:
         bot.load_extension(f"cogs.{cog}")
         log_msg = f"[COG] '{cog}' cog loaded by {ctx.author}"
@@ -140,8 +140,10 @@ async def admin_load(ctx: ApplicationContext, cog: str):
 
 @admin_group.command(name="unload", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="cog", description="The cog you want to reload", autocomplete=cog_autocomplete)
-@permissions.is_owner()
 async def admin_unload(ctx: ApplicationContext, cog: str):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
     try:
         bot.reload_extension(f"cogs.{cog}")
         log_msg = f"[COG] '{cog}' cog unloaded by {ctx.author}"
@@ -178,8 +180,10 @@ async def filename_autocomplete(ctx: AutocompleteContext):
 @admin_group.command(name="download", description="Administrateur seulement", guild_ids=guild_ids)
 @option(name="directory", description="The directory of the file.", autocomplete=directory_autocomplete)
 @option(name="filename", description="The targeted file", autocomplete=filename_autocomplete)
-@permissions.is_owner()
 async def download_file(ctx: ApplicationContext, directory: str, filename: str):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
     if directory in get_parameter('ignored_directories'):
         await ctx.respond("> Access denied !", ephemeral=True)
 
@@ -193,9 +197,37 @@ async def download_file(ctx: ApplicationContext, directory: str, filename: str):
             await ctx.respond(e, ephemeral=True)
 
 
+@admin_group.command(name="op", description="Administrateur seulement", guild_ids=guild_ids)
+@option(name="user", description="The targeted user", type=Member)
+async def admin_op(ctx: ApplicationContext, user: Member):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
+    if not user:
+        await ctx.respond("Please specify a user")
+        return
+
+    with open("config.json", "r", encoding="utf-8") as config_file:
+        config = json.load(config_file)
+
+    guild = bot.get_guild(config['guild_id'])
+    admin_role = config['roles'][config['current_year']]['OP']
+    role = utils.get(guild.roles, id=admin_role)
+
+    try:
+        await user.add_roles(role)
+        await user.send("Done")
+        log_msg = f"[CMD] {ctx.author} has received 'op' role"
+        log_action(file_name=bot.log_file_name, txt=log_msg)
+    except RoleNotFound:
+        await ctx.author.send(f"> Le rôle <@&{admin_role}> n'existe pas/plus.")
+
+
 @admin_group.command(name="shutdown", description="Administrateur seulement", guild_ids=guild_ids)
-@permissions.is_owner()
 async def admin_shutdown(ctx: ApplicationContext):
+    if ctx.author.id not in bot.owner_ids:
+        await ctx.respond("> This command is for bot administrators only !", ephemeral=True)
+        return
     await ctx.respond("Closing bot !", ephemeral=True)
     log_msg = f"[STATUS] Bot stopped by {ctx.author}"
     log_action(file_name=bot.log_file_name, txt=log_msg)
